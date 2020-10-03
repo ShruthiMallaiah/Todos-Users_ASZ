@@ -14,6 +14,7 @@ const AddModal = ({ visibility, loading, onCancel, onCreate, type }) => {
     }, [type])
 
     const onSubmit = useCallback((values) => {
+		form.resetFields();
         onCreate(values, addType);
     }, [type]);
 
