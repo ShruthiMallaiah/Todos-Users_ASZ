@@ -1,0 +1,17 @@
+.editable-row .ant-form-item-explain {
+    position: absolute;
+    top: 100%;
+    font-size: 12px;
+  }
+
+  .btnStyle{
+    margin:10px 10px 10px 20px;
+  }
+
+  .ant-tabs-nav-wrap{
+    margin: 20px;
+  }
+
+  .ant-spin-container{
+    margin: 20px !important;
+  }
