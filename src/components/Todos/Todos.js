@@ -1,30 +1,18 @@
 import React from 'react';
-import { Button, Table, Form } from 'antd';
-import EditableCell from '../../utility/EditableCell';
+import { Button, Table } from 'antd';
 import '../home.css';
 
-const Todos = ({ todoHandler, form, dataSource, mergedColumns, cancelTodo }) => {
+const Todos = ({ onAddTodo, dataSource, mergedColumns }) => {
     return (
         <>
-            <Button type="primary" onClick={todoHandler} className="btnStyle" size="large">
+            <Button type="primary" onClick={onAddTodo} className="btnStyle" size="large">
                 <strong>Add Todo</strong>
             </Button>
-            <Form form={form} component={false}>
-                <Table
-                    components={{
-                        body: {
-                            cell: EditableCell,
-                        },
-                    }}
-                    bordered
-                    dataSource={dataSource}
-                    columns={mergedColumns}
-                    rowClassName="editable-row"
-                    pagination={{
-                        onChange: cancelTodo
-                    }}
-                />
-            </Form>
+            <Table
+                bordered
+                dataSource={dataSource}
+                columns={mergedColumns}
+            />
         </>
     )
 }

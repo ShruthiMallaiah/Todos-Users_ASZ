@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import moment from 'moment';
 import { Form, Input, DatePicker } from 'antd';
 
 const layout = {
@@ -10,7 +11,16 @@ const layout = {
     },
 };
 
-const TodoForm = ({ onSubmit, form }) => {
+const TodoForm = ({ onSubmit, form, record, mode }) => {
+
+    useEffect(() => {
+        if (mode) {
+            form.setFieldsValue({
+                action: record.action,
+                dateadded: moment(record.dateadded)
+            })
+        }
+    }, [record])
 
     return (
         <Form {...layout} onFinish={onSubmit} form={form}>
@@ -20,10 +30,11 @@ const TodoForm = ({ onSubmit, form }) => {
                 rules={[
                     {
                         required: true,
+                        message: 'Please enter the action!'
                     },
                 ]}
             >
-                <Input placeholder="Add Action here" />
+                <Input placeholder="Add Action here" value={form.action} />
             </Form.Item>
             <Form.Item
                 name="dateadded"
@@ -31,6 +42,7 @@ const TodoForm = ({ onSubmit, form }) => {
                 rules={[
                     {
                         required: true,
+                        message: 'Please enter the date!',
                     },
                 ]}
             >
@@ -38,6 +50,7 @@ const TodoForm = ({ onSubmit, form }) => {
                     showTime={{ format: "HH:mm" }}
                     format="YYYY-MM-DD HH:mm:ss"
                     showToday
+                    value={form.dateadded}
                 />
             </Form.Item>
         </Form>

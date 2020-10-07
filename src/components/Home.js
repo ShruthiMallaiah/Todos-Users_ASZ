@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { Tabs, Form, Popconfirm, Divider } from 'antd';
+import { Tabs, Popconfirm, Divider } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import Todos from './Todos/Todos';
 import Users from './Users/Users';
-import AddModal from '../utility/AddModal';
+import AddEditModal from './AddEditModal';
 import { Modal_Types } from '../utility/constants';
 import * as todosActions from '../store/actions/todosActions';
 import * as usersActions from '../store/actions/usersActions';
@@ -13,7 +13,6 @@ import './home.css';
 const { TabPane } = Tabs;
 
 const Home = () => {
-    const [form] = Form.useForm();
     const dispatch = useDispatch();
 
     const todosList = useSelector(state => state.todos)
@@ -24,8 +23,8 @@ const Home = () => {
     const [visible, setVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [modalType, setModalType] = useState('');
-    const [editTodoKey, setEditTodoKey] = useState('');
-    const [editUserKey, setEditUserKey] = useState('');
+    const [editMode, setEditMode] = useState(false);
+    const [editRecord, setEditRecord] = useState({});
 
 
     useEffect(() => {
@@ -40,10 +39,16 @@ const Home = () => {
         setUsers(usersList);
     }, [todosList, usersList])
 
-    const hideModal = () => setVisible(false);
+    const hideModal = () => {
+        setVisible(false);
+        if (editMode) {
+            setEditRecord({});
+            setEditMode(false);
+        }
+    }
     const showModal = () => setVisible(true);
 
-    const createHandler = (values, type) => {
+    const createHandler = (values) => {
         setLoading(true);
         setTimeout(() => {
             if (modalType === Modal_Types.TODO) {
@@ -60,73 +65,69 @@ const Home = () => {
         }, 2000);
     }
 
+    const editDataHandler = (oldData, formData) => {
+        const newData = [...oldData];
+        const index = newData.findIndex((item) => editRecord.key === item.key);
+        if (index > -1) {
+            const item = newData[index];
+            newData.splice(index, 1, { ...item, ...formData });
+        }
+        return newData
+    }
+
+    const editHandler = async (values) => {
+        setLoading(true);
+        setTimeout(() => {
+            if (modalType === Modal_Types.TODO) {
+                const formValue = {
+                    ...values,
+                    dateadded: moment(values["dateadded"]).format("YYYY-MM-DD HH:mm:ss")
+                };
+                const newData = editDataHandler(todos.todos, formValue);
+                console.log(newData)
+                dispatch(todosActions.editTodo(newData));
+            } else {
+                const newData = editDataHandler(users.users, values);
+                console.log(newData)
+                dispatch(usersActions.editUser(newData));
+            }
+            setVisible(false);
+            setEditRecord({});
+            setEditMode(false);
+            setLoading(false)
+        }, 2000)
+    }
+
+    const editModeHandler = (record) => {
+        setVisible(true);
+        setEditMode(true);
+        setEditRecord(record);
+    }
+
+    const todoEditHandler = (record) => {
+        setModalType(Modal_Types.TODO);
+        editModeHandler(record);
+    }
+
+    const userEditHandler = (record) => {
+        setModalType(Modal_Types.USER);
+        editModeHandler(record);
+    }
+
     const addTypeHandler = addType => setModalType(addType);
 
-    const todoHandler = () => {
+    const addTodoHandler = () => {
         showModal();
         addTypeHandler(Modal_Types.TODO);
     }
 
-    const userHandler = () => {
+    const addUserHandler = () => {
         showModal();
         addTypeHandler(Modal_Types.USER);
     }
 
-    const isTodoEditing = record => record.key === editTodoKey
-    const isUserEditing = record => record.key === editUserKey
-
-    const editTodo = (record) => {
-        form.setFieldsValue({
-            action: '',
-            dateadded: '',
-            ...record,
-        });
-        setEditTodoKey(record.key);
-    };
-
-    const editUser = (record) => {
-        form.setFieldsValue({
-            name: '',
-            email: '',
-            ...record,
-        });
-        setEditUserKey(record.key);
-    };
-
     const deleteTodo = key => dispatch(todosActions.deleteTodo(key))
     const deleteUser = key => dispatch(usersActions.deleteUser(key))
-
-
-    const saveTodo = async (key) => {
-        const row = await form.validateFields();
-        const newData = [...todos.todos];
-        const index = newData.findIndex((item) => key === item.key);
-        if (index > -1) {
-            const item = newData[index];
-            newData.splice(index, 1, { ...item, ...row });
-        } else {
-            newData.push(row);
-        }
-        setEditTodoKey('')
-        dispatch(todosActions.editTodo(newData))
-    }
-
-    const saveUser = async (key) => {
-        const row = await form.validateFields();
-        const newData = [...users.users];
-        const index = newData.findIndex((item) => key === item.key);
-        if (index > -1) {
-            const item = newData[index];
-            newData.splice(index, 1, { ...item, ...row });
-        } else {
-            newData.push(row);
-        }
-        setEditUserKey('')
-        dispatch(usersActions.editUser(newData))
-    }
-
-    const cancelTodo = () => setEditTodoKey('')
-    const cancelUser = () => setEditUserKey('')
 
     const todoColumns = [
         {
@@ -149,44 +150,23 @@ const Home = () => {
             key: 'operation',
             width: '34%',
             render: (_, record) => {
-                const editable = isTodoEditing(record);
-                return editable ? (
-                    <span>
+                return (
+                    <div>
                         <a
+                            onClick={() => todoEditHandler(record)}
                             href="#!"
-                            onClick={() => saveTodo(record.key)}
-                            style={{
-                                marginRight: 8,
-                            }}
                         >
-                            Save
+                            Edit
                         </a>
                         <Divider type="vertical" />
                         <Popconfirm
-                            title="Sure to cancel?"
-                            onConfirm={() => cancelTodo(record.key)}
+                            title="Sure to delete?"
+                            onConfirm={() => deleteTodo(record.key)}
                         >
-                            <a href="#!">Cancel</a>
+                            <a href="#!">Delete</a>
                         </Popconfirm>
-                    </span>
-                ) : (
-                        <div>
-                            <a
-                                disabled={editTodoKey !== ""}
-                                onClick={() => editTodo(record)}
-                                href="#!"
-                            >
-                                Edit
-                        </a>
-                            <Divider type="vertical" />
-                            <Popconfirm
-                                title="Sure to delete?"
-                                onConfirm={() => deleteTodo(record.key)}
-                            >
-                                <a href="#!">Delete</a>
-                            </Popconfirm>
-                        </div>
-                    )
+                    </div>
+                )
             },
         }
     ]
@@ -212,110 +192,54 @@ const Home = () => {
             key: 'operation',
             width: '34%',
             render: (_, record) => {
-                const editable = isUserEditing(record);
-                return editable ? (
-                    <span>
+                return (
+                    <div>
                         <a
+                            onClick={() => userEditHandler(record)}
                             href="#!"
-                            onClick={() => saveUser(record.key)}
-                            style={{
-                                marginRight: 8,
-                            }}
                         >
-                            Save
+                            Edit
                         </a>
                         <Divider type="vertical" />
                         <Popconfirm
-                            title="Sure to cancel?"
-                            onConfirm={() => cancelUser(record.key)}
+                            title="Sure to delete?"
+                            onConfirm={() => deleteUser(record.key)}
                         >
-                            <a href="#!">Cancel</a>
+                            <a href="#!">Delete</a>
                         </Popconfirm>
-                    </span>
-                ) : (
-                        <div>
-                            <a
-                                disabled={editTodoKey !== ""}
-                                onClick={() => editUser(record)}
-                                href="#!"
-                            >
-                                Edit
-                        </a>
-                            <Divider type="vertical" />
-                            <Popconfirm
-                                title="Sure to delete?"
-                                onConfirm={() => deleteUser(record.key)}
-                            >
-                                <a href="#!">Delete</a>
-                            </Popconfirm>
-                        </div>
-                    )
+                    </div>
+                )
             },
         }
     ]
-
-    const mergedTodoColumns = todoColumns.map(col => {
-        if (!col.editable) {
-            return col;
-        }
-
-        return {
-            ...col,
-            onCell: (record) => ({
-                record,
-                inputType: col.dataIndex === 'key' ? 'number' : 'text',
-                dataIndex: col.dataIndex,
-                title: col.title,
-                editing: isTodoEditing(record),
-            }),
-        };
-    });
-
-    const mergedUserColumns = userColumns.map(col => {
-        if (!col.editable) {
-            return col;
-        }
-
-        return {
-            ...col,
-            onCell: (record) => ({
-                record,
-                inputType: col.dataIndex === 'key' ? 'number' : 'text',
-                dataIndex: col.dataIndex,
-                title: col.title,
-                editing: isUserEditing(record),
-            }),
-        };
-    });
 
     return (
         <React.Fragment>
             <Tabs defaultActiveKey="1" size="large">
                 <TabPane tab="Todos" key="1">
                     <Todos
-                        todoHandler={todoHandler}
-                        form={form}
+                        onAddTodo={addTodoHandler}
                         dataSource={todos.todos}
-                        mergedColumns={mergedTodoColumns}
-                        cancelTodo={cancelTodo}
+                        mergedColumns={todoColumns}
                     />
                 </TabPane>
                 <TabPane tab="Users" key="2">
                     <Users
-                        userHandler={userHandler}
-                        form={form}
+                        onAddUser={addUserHandler}
                         dataSource={users.users}
-                        mergedColumns={mergedUserColumns}
-                        cancelUser={cancelUser}
+                        mergedColumns={userColumns}
                     />
                 </TabPane>
             </Tabs>
-            <AddModal
+            <AddEditModal
                 visibility={visible}
                 loading={loading}
                 onCreate={createHandler}
+                onEdit={editHandler}
                 onCancel={hideModal}
                 type={modalType}
+                mode={editMode}
+                record={editRecord}
             />
         </React.Fragment>
     )

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Form, Input } from 'antd';
 
 const layout = {
@@ -10,7 +10,16 @@ const layout = {
     },
 };
 
-const UserForm = ({ onSubmit, form }) => {
+const UserForm = ({ onSubmit, form, record, mode }) => {
+
+    useEffect(() => {
+        if (mode) {
+            form.setFieldsValue({
+                name: record.name,
+                email: record.email
+            })
+        }
+    }, [record])
 
     return (
         <Form {...layout} onFinish={onSubmit} form={form}>
@@ -20,10 +29,11 @@ const UserForm = ({ onSubmit, form }) => {
                 rules={[
                     {
                         required: true,
+                        message: 'Please enter the name!'
                     },
                 ]}
             >
-                <Input placeholder="Add your name" />
+                <Input placeholder="Add your name" value={form.name} />
             </Form.Item>
             <Form.Item
                 name="email"
@@ -31,10 +41,11 @@ const UserForm = ({ onSubmit, form }) => {
                 rules={[
                     {
                         required: true,
+                        message: 'Please enter the email!'
                     },
                 ]}
             >
-                <Input placeholder="Add your email" />
+                <Input placeholder="Add your email" value={form.email} />
             </Form.Item>
         </Form>
     )

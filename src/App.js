@@ -16,7 +16,7 @@ const App = () => {
       </Content>
       <Footer>
         <strong>Submitted By</strong>
-        <a href="https://shruthiportfolio.netlify.app/" target="_blank">
+        <a href="https://shruthiportfolio.netlify.app/" target="_blank" rel="noopener noreferrer">
           <strong> Shruthi.M</strong>
         </a>
       </Footer>
